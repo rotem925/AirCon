@@ -25,13 +25,6 @@ class _NotifyConfiguration:
   headers: dict
   last_timestamp: int
 
-
-def _run_after_failure(retry_state):
-  config = retry_state.kwargs['config']
-  config.device.available = False
-  return 0
-
-
 class Notifier:
   _KEEP_ALIVE_INTERVAL = 10.0
   _TIME_TO_HANDLE_REQUESTS = 100e-3
@@ -95,31 +88,29 @@ class Notifier:
     self._running = False
     await self._notify()
 
-  @retry(retry=retry_if_exception_type(ConnectionError),
-         retry_error_callback=_run_after_failure,
-         wait=wait_exponential(exp_base=1.6, max=10),
-         stop=stop_after_attempt(6))
   async def _perform_request(self, session: aiohttp.ClientSession,
                              config: _NotifyConfiguration) -> int:
-    now = time.time()
     queue_size = config.device.commands_queue.qsize()
     if (queue_size == 0 or
-        not config.device.available) and now - config.last_timestamp < self._KEEP_ALIVE_INTERVAL:
+        not config.device.available) and time.time() - config.last_timestamp < self._KEEP_ALIVE_INTERVAL:
       return 0
     method = 'PUT' if config.device.available else 'POST'
     self._json['local_reg']['notify'] = int(config.device.commands_queue.qsize() > 0)
     url = f'http://{config.device.ip_address}/local_reg.json'
     logging.debug(f'[KeepAlive] Sending {method} {url} {json.dumps(self._json)}')
+    # try:
     try:
       async with session.request(method, url, json=self._json, headers=config.headers) as resp:
         if resp.status != HTTPStatus.ACCEPTED.value:
           resp_data = await resp.text()
-          logging.error(f'[KeepAlive] Sending local_reg failed: {resp.status}, {resp_data}')
-          raise ConnectionError(f'Sending local_reg failed: {resp.status}, {resp_data}')
-    except (aiohttp.client_exceptions.ClientConnectorError, aiohttp.client_exceptions.ClientConnectionError) as e:
-      logging.error(f'Failed to connect to {config.device.ip_address}, maybe it is offline?')      
-      raise ConnectionError(
-          f'Failed to connect to {config.device.ip_address}, maybe it is offline?')    
-    config.last_timestamp = now
+          raise ConnectionError(f'{resp.status}, {resp_data}')
+    except Exception as e:
+      logging.error(f'[KeepAlive] Error: {str(e)}')
+      logging.error(f'[KeepAlive] Failed to connect to {config.device.ip_address}, maybe it is offline?')
+      config.last_timestamp = time.time()
+      config.device.available = False
+      return 0
+
+    config.last_timestamp = time.time()
     config.device.available = True
     return queue_size
