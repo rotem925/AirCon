@@ -11,7 +11,6 @@ import logging
 import logging.handlers
 import os
 import paho.mqtt.client as mqtt
-from retry import retry
 import signal
 import socket
 import sys

@@ -7,7 +7,6 @@ import json
 import logging
 import socket
 import sys
-from tenacity import retry, retry_if_exception_type, wait_exponential, stop_after_attempt
 import time
 import threading
 
