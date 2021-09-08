@@ -241,6 +241,9 @@ async def run(parsed_args):
                                                                       topics['temp'])
         config['max_temp'] = '86' if device.is_fahrenheit else '30'
         config['min_temp'] = '61' if device.is_fahrenheit else '16'
+
+      for topic in device.topics:
+         mqtt_client.publish(mqtt_topics['pub'].format(device.mac_address, topic), payload=None, retain=True)
       mqtt_client.publish(mqtt_topics['discovery'].format(device.mac_address),
                           payload=json.dumps(config),
                           retain=True)
