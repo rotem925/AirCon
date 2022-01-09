@@ -95,7 +95,7 @@ class Notifier:
         ) and time.time() - config.last_timestamp < self._KEEP_ALIVE_INTERVAL:
       return 0
     method = 'PUT' if config.device.available else 'POST'
-    self._json['local_reg']['notify'] = int(config.device.commands_queue.qsize() > 0)
+    self._json['local_reg']['notify'] = int(queue_size > 0)
     url = f'http://{config.device.ip_address}/local_reg.json'
     logging.debug(f'[KeepAlive] Sending {method} {url} {json.dumps(self._json)}')
     # try:
