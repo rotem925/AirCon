@@ -90,8 +90,9 @@ class Notifier:
   async def _perform_request(self, session: aiohttp.ClientSession,
                              config: _NotifyConfiguration) -> int:
     queue_size = config.device.commands_queue.qsize()
-    if (queue_size == 0 or
-        not config.device.available) and time.time() - config.last_timestamp < self._KEEP_ALIVE_INTERVAL:
+    if (queue_size == 0 
+        #or not config.device.available
+        ) and time.time() - config.last_timestamp < self._KEEP_ALIVE_INTERVAL:
       return 0
     method = 'PUT' if config.device.available else 'POST'
     self._json['local_reg']['notify'] = int(config.device.commands_queue.qsize() > 0)
