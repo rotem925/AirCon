@@ -183,9 +183,9 @@ async def run(parsed_args):
     mqtt_client = MqttClient(parsed_args.mqtt_client_id, mqtt_topics, devices)
     if parsed_args.mqtt_user:
       mqtt_client.username_pw_set(*parsed_args.mqtt_user.split(':', 1))
-    mqtt_client.will_set(mqtt_topics['lwt'], payload='offline', retain=False)
+    mqtt_client.will_set(mqtt_topics['lwt'], payload='offline', retain=True)
     mqtt_client.connect(parsed_args.mqtt_host, parsed_args.mqtt_port)
-    mqtt_client.publish(mqtt_topics['lwt'], payload='online', retain=False)
+    mqtt_client.publish(mqtt_topics['lwt'], payload='online', retain=True)
     for device in devices:
       config = {
           'name': device.name,

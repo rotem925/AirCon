@@ -60,13 +60,14 @@ class MqttClient(mqtt.Client):
       chosen_device = device
 
     self.mqtt_publish_update(chosen_device.mac_address, prop_name,
-                             chosen_device.get_property(prop_name))
+                             chosen_device.get_property(prop_name),
+                             retain=False)
 
-  def mqtt_publish_update(self, mac_address: str, property_name: str, value) -> None:
+  def mqtt_publish_update(self, mac_address: str, property_name: str, value, retain: bool = False) -> None:
     if isinstance(value, enum.Enum):
       payload = 'fan_only' if (value is AcWorkMode.FAN or
                                value is FglOperationMode.FAN) else value.name.lower()
     else:
       payload = str(value)
     self.publish(self._mqtt_topics['pub'].format(mac_address, property_name),
-                 payload=payload.encode('utf-8'), retain=False)
+                 payload=payload.encode('utf-8'), retain=retain)
