@@ -27,6 +27,7 @@ class _NotifyConfiguration:
 class Notifier:
   _KEEP_ALIVE_INTERVAL = 10.0
   _TIME_TO_HANDLE_REQUESTS = 100e-3
+  _REQUEST_TIMEOUT = 5.0
 
   def __init__(self, port: int):
     self._configurations = []
@@ -100,12 +101,12 @@ class Notifier:
     logging.debug(f'[KeepAlive] Sending {method} {url} {json.dumps(self._json)}')
     # try:
     try:
-      async with session.request(method, url, json=self._json, headers=config.headers) as resp:
+      async with session.request(method, url, json=self._json, headers=config.headers, timeout=self._REQUEST_TIMEOUT) as resp:
         if resp.status != HTTPStatus.ACCEPTED.value:
           resp_data = await resp.text()
           raise ConnectionError(f'{resp.status}, {resp_data}')
     except Exception as e:
-      logging.error(f'[KeepAlive] Error: {str(e)}')
+      logging.error(f'[KeepAlive] Error: {repr(e)}')
       logging.error(f'[KeepAlive] Failed to connect to {config.device.ip_address}, maybe it is offline?')
       config.last_timestamp = time.time()
       config.device.available = False
